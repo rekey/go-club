@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务管理器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .add-task {
+            display: flex;
+            gap: 10px;
+        }
+        .add-task input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .add-task input:focus {
+            outline: none;
+            border-color: #1890ff;
+        }
+        .add-task button {
+            padding: 10px 25px;
+            background: #1890ff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .add-task button:hover {
+            background: #40a9ff;
+        }
+        .task-list {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .task-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-header h2 {
+            color: #333;
+            font-size: 18px;
+        }
+        .refresh-btn {
+            padding: 6px 15px;
+            background: #52c41a;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .refresh-btn:hover {
+            background: #73d13d;
+        }
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .task-table th,
+        .task-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .task-table th {
+            background: #fafafa;
+            font-weight: 500;
+            color: #666;
+            font-size: 13px;
+        }
+        .task-table td {
+            font-size: 14px;
+            color: #333;
+        }
+        .task-table .url {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-0 { background: #fff7e6; color: #fa8c16; }
+        .status-1 { background: #e6f7ff; color: #1890ff; }
+        .status-2 { background: #f6ffed; color: #52c41a; }
+        .status-3 { background: #f9f0ff; color: #722ed1; }
+        .status-4 { background: #f6ffed; color: #52c41a; }
+        .status--1 { background: #fff1f0; color: #f5222d; }
+        .progress-bar {
+            width: 150px;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #1890ff;
+            transition: width 0.3s ease;
+        }
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .task-actions button {
+            padding: 5px 10px;
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .task-actions button:hover:not(:disabled) {
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        .task-actions button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+            background: #f5f5f5;
+        }
+        .empty {
+            padding: 40px;
+            text-align: center;
+            color: #999;
+        }
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 4px;
+            color: #fff;
+            display: none;
+            z-index: 1000;
+        }
+        .message.success { background: #52c41a; }
+        .message.error { background: #f5222d; }
+        .message.info { background: #1890ff; }
+        .downloading-row {
+            background-color: #f0f9ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>任务管理器</h1>
+            <div class="add-task">
+                <input type="text" id="urlInput" placeholder="请输入视频URL...">
+                <button onclick="addTask()">添加任务</button>
+            </div>
+        </div>
+
+        <div class="task-list">
+            <div class="task-header">
+                <h2>任务列表</h2>
+                <button class="refresh-btn" onclick="loadTasks()">刷新</button>
+            </div>
+            <table class="task-table">
+                <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>URL</th>
+                        <th>状态</th>
+                        <th>进度</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="taskTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <script>
+        const API_BASE = '/api';
+        const downloadingTasks = new Map(); // 存储下载中的任务
+
+        const STATUS_MAP = {
+            '-1': { text: '错误', class: 'status--1' },
+            '0': { text: '等待中', class: 'status-0' },
+            '1': { text: '解析中', class: 'status-1' },
+            '2': { text: '下载中', class: 'status-2' },
+            '3': { text: '合并中', class: 'status-3' },
+            '4': { text: '移动中', class: 'status-3' },
+            '5': { text: '完成', class: 'status-4' }
+        };
+
+        function showMessage(msg, type = 'info') {
+            const el = document.getElementById('message');
+            el.textContent = msg;
+            el.className = `message ${type}`;
+            el.style.display = 'block';
+            setTimeout(() => {
+                el.style.display = 'none';
+            }, 3000);
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN');
+        }
+
+        async function loadTasks() {
+            try {
+                const res = await fetch(`${API_BASE}/task/all`);
+                const data = await res.json();
+                
+                if (data.code) {
+                    showMessage(data.msg || '获取任务失败', 'error');
+                    return;
+                }
+
+                const tbody = document.getElementById('taskTableBody');
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty">暂无任务</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(task => {
+                    const status = STATUS_MAP[task.status] || { text: '未知', class: '' };
+                    const isDownloading = task.status === 1 || task.status === 2 || task.status === 3 || task.status === 4;
+                    return `
+                        <tr id="task-${encodeURIComponent(task.url)}" ${isDownloading ? 'class="downloading-row"' : ''}>
+                            <td>${task.name || '-'}</td>
+                            <td class="url" title="${task.url}">${task.url}</td>
+                            <td><span class="status ${status.class}">${status.text}</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${task.progress}%"></div>
+                                </div>
+                                <span>${task.progress.toFixed(1)}%</span>
+                            </td>
+                            <td>${formatDate(task.CreatedAt)}</td>
+                            <td>
+                                <div class="task-actions">
+                                    <button onclick="startTask('${encodeURIComponent(task.url)}')" ${task.status !== -1 ? 'disabled' : ''}>启动</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // 启动下载中任务的单独刷新
+                data.forEach(task => {
+                    if (task.status === 1 || task.status === 2 || task.status === 3 || task.status === 4) {
+                        startDownloadingTaskRefresh(task.url);
+                    }
+                });
+            } catch (err) {
+                showMessage('请求失败，请确保服务已启动', 'error');
+            }
+        }
+
+        async function addTask() {
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showMessage('请输入URL', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/task/add?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+
+                if (data.code) {
+                    showMessage(data.msg || '添加任务失败', 'error');
+                    return;
+                }
+
+                showMessage('任务添加成功', 'success');
+                urlInput.value = '';
+                loadTasks();
+            } catch (err) {
+                showMessage('请求失败', 'error');
+            }
+        }
+
+        async function startTask(url) {
+            try {
+                const res = await fetch(`${API_BASE}/task/start?url=${url}`);
+                const data = await res.json();
+
+                if (data.code) {
+                    showMessage(data.msg || '启动任务失败', 'error');
+                    return;
+                }
+
+                const status = STATUS_MAP[data.status] || { text: '未知', class: '' };
+                showMessage(`任务已启动 | 状态: ${status.text} | 进度: ${data.progress.toFixed(1)}%`, 'success');
+                loadTasks();
+            } catch (err) {
+                showMessage('请求失败', 'error');
+            }
+        }
+
+        async function startDownloadingTaskRefresh(url) {
+            // 如果已经有定时器，先清除
+            if (downloadingTasks.has(url)) {
+                return;
+            }
+
+            // 添加到下载任务列表
+            downloadingTasks.set(url, true);
+
+            // 立即刷新一次
+            await refreshTaskItem(url);
+
+            // 设置每1秒刷新
+            const intervalId = setInterval(async () => {
+                const result = await refreshTaskItem(url);
+                // 如果任务完成或出错，停止刷新
+                if (!result || result.status === 5 || result.status === -1) {
+                    clearInterval(intervalId);
+                    downloadingTasks.delete(url);
+                    loadTasks(); // 刷新整个列表
+                }
+            }, 1000);
+        }
+
+        async function refreshTaskItem(url) {
+            try {
+                const res = await fetch(`${API_BASE}/task/item?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+
+                if (data.code) {
+                    return null;
+                }
+
+                // 更新表格中的行
+                const row = document.getElementById(`task-${encodeURIComponent(url)}`);
+                if (row) {
+                    const status = STATUS_MAP[data.status] || { text: '未知', class: '' };
+                    const isDownloading = data.status === 1 || data.status === 2 || data.status === 3 || data.status === 4;
+                    row.className = isDownloading ? 'downloading-row' : '';
+                    row.innerHTML = `
+                        <td>${data.name || '-'}</td>
+                        <td class="url" title="${data.url}">${data.url}</td>
+                        <td><span class="status ${status.class}">${status.text}</span></td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${data.progress}%"></div>
+                            </div>
+                            <span>${data.progress.toFixed(1)}%</span>
+                        </td>
+                        <td>${formatDate(data.CreatedAt)}</td>
+                        <td>
+                            <div class="task-actions">
+                                <button onclick="startTask('${encodeURIComponent(data.url)}')" ${data.status !== -1 ? 'disabled' : ''}>启动</button>
+                            </div>
+                        </td>
+                    `;
+                }
+
+                return data;
+            } catch (err) {
+                return null;
+            }
+        }
+
+        // 初始化加载任务
+        loadTasks();
+
+        // 每5秒自动刷新整体列表
+        setInterval(loadTasks, 5000);
+    </script>
+</body>
+</html>

@@ -1,6 +1,8 @@
 package downloader
 
 import (
+	"os"
+	"path"
 	"time"
 
 	"github.com/canhlinh/hlsdl"
@@ -36,6 +38,17 @@ type Result struct {
 	Stat     string
 }
 
+var inited = false
+
+func clear(dir string) {
+	if inited {
+		return
+	}
+	inited = true
+	tmp := path.Join(dir, "tmp")
+	common.CreateDir(tmp)
+}
+
 /*
 Download 启动异步HLS下载任务并返回进度通知通道
 
@@ -56,10 +69,18 @@ Download 启动异步HLS下载任务并返回进度通知通道
 	通道会在下载结束后自动关闭，调用方应处理所有状态通知
 */
 func Download(args Args) chan Result {
-	hlsDL := hlsdl.New(args.Url, common.GetHeader(args.Referer), args.Dir, args.Name, args.Num, false)
+	clear(args.Dir)
+	tmp := path.Join(args.Dir, "tmp")
+	tmpFile := path.Join(tmp, args.Name)
+	originFile := path.Join(args.Dir, args.Name)
+	hlsDL := hlsdl.New(args.Url, common.GetHeader(args.Referer), tmp, args.Name, args.Num, false)
 	progressChan := make(chan Result)
+	progressChanClose := false
 	go func() {
-		defer close(progressChan)
+		defer func() {
+			progressChanClose = true
+			close(progressChan)
+		}()
 		_, err := hlsDL.Download()
 		if err != nil {
 			progressChan <- Result{
@@ -68,6 +89,7 @@ func Download(args Args) chan Result {
 			}
 			return
 		}
+		os.Rename(tmpFile, originFile)
 		progressChan <- Result{
 			Progress: 1,
 			Stat:     StatComplete,
@@ -75,6 +97,9 @@ func Download(args Args) chan Result {
 	}()
 	go func() {
 		for {
+			if progressChanClose {
+				break
+			}
 			p := hlsDL.GetProgress()
 			if p >= 1 {
 				progressChan <- Result{

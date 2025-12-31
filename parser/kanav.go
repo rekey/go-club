@@ -3,7 +3,6 @@ package parser
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/url"
 	"regexp"
@@ -30,7 +29,7 @@ func parseKanavData(s string) *tKanavData {
 	}
 
 	jsonStr := matches[1]
-	fmt.Printf("提取的JSON: %s\n", jsonStr) // 调试输出
+	// fmt.Printf("提取的JSON: %s\n", jsonStr) // 调试输出
 
 	// 解析JSON
 	var result tKanavData
@@ -44,7 +43,7 @@ func parseKanavData(s string) *tKanavData {
 	return &result
 }
 
-func parseKanav(u string) *common.Media {
+func parseKanav(u string) *Media {
 	res, err := common.HttpGet(u, common.GetUrlRefer(u))
 	if err != nil {
 		log.Println(err)
@@ -58,7 +57,7 @@ func parseKanav(u string) *common.Media {
 	}
 	s := doc.Find(".video-server .poplayer script").First().Text()
 	result := parseKanavData(s)
-	var media = common.Media{
+	var media = Media{
 		Url:     u,
 		Title:   result.Data.Name,
 		Maker:   result.Data.Maker,

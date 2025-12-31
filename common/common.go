@@ -1,21 +1,18 @@
 package common
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+
+	"github.com/rekey/go-club/env"
 )
 
-type Media struct {
-	Title   string
-	Maker   string
-	Tags    []string
-	Url     string
-	M3u8Url string
-}
-
 type ParseType int
+
+const PTNone = -1
 
 const (
 	PTMadou ParseType = iota
@@ -40,12 +37,12 @@ var referMap = map[ParseType]string{
 func GetUrlPT(u string) ParseType {
 	uo, err := url.Parse(u)
 	if err != nil {
-		return -1
+		return PTNone
 	}
 	if value, ok := hostPTMap[uo.Host]; ok {
 		return value
 	}
-	return -1
+	return PTNone
 }
 
 func GetUrlRefer(u string) string {
@@ -124,4 +121,21 @@ func CreateDir(path string) {
 		return
 	}
 	log.Println("Directory created:", path)
+}
+
+func init() {
+	if !dirExists(env.LogDir) {
+		CreateDir(env.LogDir)
+	}
+	// 1. 打开或创建日志文件（追加模式)
+	logPath := env.LogDir + "/app.log"
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal("无法打开日志文件:", err)
+	}
+
+	// 2. 设置日志输出：同时输出到文件和控制台
+	multiWriter := io.MultiWriter(logFile)
+	// multiWriter := io.MultiWriter(os.Stdout, logFile)
+	log.SetOutput(multiWriter)
 }

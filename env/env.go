@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 
 	"go.yaml.in/yaml/v4"
 )
@@ -11,6 +12,7 @@ import (
 type Config struct {
 	DataDir     string `yaml:"data_dir"`
 	DownloadDir string `yaml:"download_dir"`
+	LogDir      string `yaml:"log_dir"`
 	Concurrency int    `yaml:"concurrency"`
 	TaskNum     int    `yaml:"task_num"`
 }
@@ -20,6 +22,7 @@ var DataDir = "./data"
 var DownloadDir = "./download"
 var Concurrency = 20
 var TaskNum = 5
+var LogDir = "./logs"
 
 // init 初始化应用配置，从配置文件中读取并解析 YAML 格式的配置项
 // 自动处理相对路径转换为绝对路径，并设置以下全局变量：
@@ -46,10 +49,17 @@ func init() {
 	if !path.IsAbs(config.DataDir) {
 		DataDir = path.Join(cwd, config.DataDir)
 	}
+	DataDir, _ = filepath.Abs(DataDir)
 	DownloadDir = config.DownloadDir
 	if !path.IsAbs(config.DownloadDir) {
 		DownloadDir = path.Join(cwd, config.DownloadDir)
 	}
+	DownloadDir, _ = filepath.Abs(DownloadDir)
+	LogDir = config.LogDir
+	if !path.IsAbs(config.LogDir) {
+		LogDir = path.Join(cwd, config.LogDir)
+	}
+	LogDir, _ = filepath.Abs(LogDir)
 	if config.Concurrency > 0 {
 		Concurrency = config.Concurrency
 	}
@@ -59,6 +69,7 @@ func init() {
 	log.Println("参数名", "配置文件", "最终使用")
 	log.Println("DataDir", config.DataDir, DataDir)
 	log.Println("DownloadDir", config.DownloadDir, DownloadDir)
+	log.Println("LogDir", config.LogDir, LogDir)
 	log.Println("Concurrency", config.Concurrency, Concurrency)
 	log.Println("TaskNum", config.TaskNum, TaskNum)
 }

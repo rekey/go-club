@@ -1,4 +1,10 @@
+# 数据库目录
 data_dir: ./data
+# 下载文件目录
 download_dir: ./downloads
+# 日志目录
+log_dir: ./logs
+# 人物并发下载数
 concurrency: 20
+# 并发任务数
 task_num: 5

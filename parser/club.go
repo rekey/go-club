@@ -37,14 +37,14 @@ func parseMadouM3U8Url(u string) string {
 	return m3u8UrlOrigin
 }
 
-func parseMadou(u string) *common.Media {
+func parseMadou(u string) *Media {
 	res, err := common.HttpGet(u, common.GetUrlRefer(u))
 	if err != nil {
 		log.Println(err)
 		return nil
 	}
 	defer res.Body.Close()
-	media := common.Media{
+	media := Media{
 		Url: u,
 	}
 	doc, err := goquery.NewDocumentFromReader(res.Body)
