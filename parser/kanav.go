@@ -58,6 +58,7 @@ func parseKanav(u string) *Media {
 	s := doc.Find(".video-server .poplayer script").First().Text()
 	thumb := doc.Find(".video-countext img").First().AttrOr("src", "")
 	result := parseKanavData(s)
+	log.Println(u, result)
 	var media = Media{
 		Url:     u,
 		Title:   result.Data.Name,

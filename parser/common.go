@@ -79,9 +79,9 @@ func Parse(u string) *Media {
 	if result != nil {
 		result.Title = sanitize(result.Title)
 		result.Maker = sanitize(result.Maker)
-	}
-	if result.Maker == "" {
-		result.Maker = "unknown"
+		if result.Maker == "" {
+			result.Maker = "unknown"
+		}
 	}
 	return result
 }
