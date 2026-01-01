@@ -1,0 +1,1 @@
+GOARCH=arm64 go build -o ./bin/club ./main.go
