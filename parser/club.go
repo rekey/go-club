@@ -14,7 +14,7 @@ func parseMadouThumb(s string) string {
 	re := regexp.MustCompile(`pic:\s*'([^']+)'`)
 	matches := re.FindStringSubmatch(s)
 	if len(matches) > 1 {
-		return matches[1]
+		return "https://dash.madou.club" + matches[1]
 	}
 	return ""
 }
