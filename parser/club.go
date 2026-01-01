@@ -63,7 +63,7 @@ func parseMadou(u string) *Media {
 		return nil
 	}
 	media.Title = doc.Find(".article-title").First().Text()
-	media.Maker = doc.Find(".article-meta .item-3").First().Text()
+	media.Maker = doc.Find(".article-meta .item-3 a").First().Text()
 	media.Tags = doc.Find(".article-tags a").Map(func(i int, s *goquery.Selection) string {
 		return s.Text()
 	})
