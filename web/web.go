@@ -18,7 +18,7 @@ func Run() {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
-	e.Use(middleware.RequestLogger())
+	// e.Use(middleware.RequestLogger())
 
 	// 嵌入式静态文件服务
 	e.GET("/", func(c echo.Context) error {
@@ -52,7 +52,7 @@ func Run() {
 			return c.JSON(200, echo.Map{"code": 1, "msg": "url not support"})
 		}
 		return c.JSON(200, task)
-	})
+	}, middleware.RequestLogger())
 	g.GET("/task/start", func(c echo.Context) error {
 		u := c.QueryParam("url")
 		task, err := dao.FindTaskByURL(u)
@@ -64,7 +64,7 @@ func Run() {
 			return c.JSON(200, echo.Map{"code": 4, "msg": "start task failed"})
 		}
 		return c.JSON(200, task)
-	})
+	}, middleware.RequestLogger())
 	err := e.Start(":8888")
 	if err != nil {
 		log.Println(err)

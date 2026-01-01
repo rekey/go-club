@@ -1,9 +1,9 @@
 # 数据库目录
-data_dir: ./data
+data_dir: ./data/db
 # 下载文件目录
-download_dir: ./downloads
+download_dir: ./data/downloads
 # 日志目录
-log_dir: ./logs
+log_dir: ./data/logs
 # 人物并发下载数
 concurrency: 20
 # 并发任务数

@@ -1,8 +1,9 @@
 package downloader
 
 import (
+	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/canhlinh/hlsdl"
@@ -23,6 +24,8 @@ init 初始化下载目录，确保下载目录存在
 func init() {
 	DownloadDir := env.DownloadDir
 	common.CreateDir(DownloadDir)
+	os.RemoveAll(env.DownloadTmpDir)
+	common.CreateDir(env.DownloadTmpDir)
 }
 
 type Args struct {
@@ -36,17 +39,7 @@ type Args struct {
 type Result struct {
 	Progress float64
 	Stat     string
-}
-
-var inited = false
-
-func clear(dir string) {
-	if inited {
-		return
-	}
-	inited = true
-	tmp := path.Join(dir, "tmp")
-	common.CreateDir(tmp)
+	Filepath string
 }
 
 /*
@@ -69,10 +62,11 @@ Download 启动异步HLS下载任务并返回进度通知通道
 	通道会在下载结束后自动关闭，调用方应处理所有状态通知
 */
 func Download(args Args) chan Result {
-	clear(args.Dir)
-	tmp := path.Join(args.Dir, "tmp")
-	tmpFile := path.Join(tmp, args.Name)
-	originFile := path.Join(args.Dir, args.Name)
+	tmp := filepath.Join(env.DownloadTmpDir, args.Dir)
+	common.CreateDir(tmp)
+	log.Println("download tmp dir", tmp)
+	tmpFile := filepath.Join(tmp, args.Name)
+	log.Println("download tmp file", tmpFile)
 	hlsDL := hlsdl.New(args.Url, common.GetHeader(args.Referer), tmp, args.Name, args.Num, false)
 	progressChan := make(chan Result)
 	progressChanClose := false
@@ -89,8 +83,8 @@ func Download(args Args) chan Result {
 			}
 			return
 		}
-		os.Rename(tmpFile, originFile)
 		progressChan <- Result{
+			Filepath: tmpFile,
 			Progress: 1,
 			Stat:     StatComplete,
 		}

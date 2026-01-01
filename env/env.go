@@ -17,12 +17,14 @@ type Config struct {
 	TaskNum     int    `yaml:"task_num"`
 }
 
-var configFile = "./config.yaml"
+var configFile = "./config/config.yaml"
 var DataDir = "./data"
 var DownloadDir = "./download"
 var Concurrency = 20
 var TaskNum = 5
 var LogDir = "./logs"
+var DownloadTmpDir = "tmp"
+var DownloadResultsDir = "results"
 
 // init 初始化应用配置，从配置文件中读取并解析 YAML 格式的配置项
 // 自动处理相对路径转换为绝对路径，并设置以下全局变量：
@@ -55,6 +57,8 @@ func init() {
 		DownloadDir = path.Join(cwd, config.DownloadDir)
 	}
 	DownloadDir, _ = filepath.Abs(DownloadDir)
+	DownloadTmpDir = path.Join(DownloadDir, DownloadTmpDir)
+	DownloadResultsDir = path.Join(DownloadDir, DownloadResultsDir)
 	LogDir = config.LogDir
 	if !path.IsAbs(config.LogDir) {
 		LogDir = path.Join(cwd, config.LogDir)
@@ -72,4 +76,7 @@ func init() {
 	log.Println("LogDir", config.LogDir, LogDir)
 	log.Println("Concurrency", config.Concurrency, Concurrency)
 	log.Println("TaskNum", config.TaskNum, TaskNum)
+	log.Println("下载配置")
+	log.Println("DownloadTmpDir", DownloadTmpDir)
+	log.Println("DownloadResultsDir", DownloadResultsDir)
 }

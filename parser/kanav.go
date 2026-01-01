@@ -56,12 +56,15 @@ func parseKanav(u string) *Media {
 		return nil
 	}
 	s := doc.Find(".video-server .poplayer script").First().Text()
+	thumb := doc.Find(".video-countext img").First().AttrOr("src", "")
 	result := parseKanavData(s)
 	var media = Media{
 		Url:     u,
 		Title:   result.Data.Name,
 		Maker:   result.Data.Maker,
 		M3u8Url: result.M3U8,
+		Thumb:   thumb,
+		Actor:   result.Data.Actor,
 	}
 	media.Tags = doc.Find(".video-countext-tags a").Map(func(i int, s *goquery.Selection) string {
 		return s.Text()

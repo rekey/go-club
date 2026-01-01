@@ -115,7 +115,7 @@ func CreateDir(path string) {
 		log.Println("Failed to remove directory:", path, err)
 		return
 	}
-	err = os.Mkdir(path, 0755)
+	err = os.MkdirAll(path, 0755)
 	if err != nil {
 		log.Println("Failed to create directory:", path, err)
 		return

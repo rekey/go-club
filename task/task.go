@@ -4,12 +4,14 @@ import (
 	"errors"
 	"log"
 	"math"
+	"path"
 	"sync"
 	"time"
 
 	"github.com/rekey/go-club/dao"
 	"github.com/rekey/go-club/downloader"
 	"github.com/rekey/go-club/env"
+	"github.com/rekey/go-club/mover"
 	"github.com/rekey/go-club/parser"
 	"github.com/rekey/go-club/pool"
 )
@@ -20,6 +22,7 @@ type Task struct {
 	Task       *dao.Task
 	Media      *parser.Media
 	Downloader downloader.Result
+	Dir        string
 }
 
 func parse(task *Task) error {
@@ -40,7 +43,7 @@ func download(task *Task) error {
 	downChan := downloader.Download(downloader.Args{
 		Url:     task.Media.M3u8Url,
 		Referer: task.Task.Url,
-		Dir:     env.DownloadDir,
+		Dir:     task.Dir,
 		Name:    name,
 		Num:     env.Concurrency,
 	})
@@ -61,17 +64,14 @@ func download(task *Task) error {
 			log.Println(name, "开始合并碎片")
 		case downloader.StatComplete:
 			task.Task.UpdateProgress(100)
-			task.Task.UpdateStatus(Stats.Complete)
-			log.Println(name, "任务完成")
+			log.Println(name, "下载完成")
+			task.Downloader = downResult
 		case downloader.StatErr:
 			task.Task.UpdateProgress(0)
 			task.Task.UpdateStatus(Stats.Err)
 			err = errors.New("download error")
 			log.Println(name, "任务出错")
 		}
-	}
-	if err == nil {
-		task.Task.UpdateStatus(Stats.Complete)
 	}
 	return err
 }
@@ -98,7 +98,14 @@ func runTask(id int) {
 		log.Println("parse error", task.Task.Url, err)
 		return
 	}
-	download(task)
+	task.Dir = path.Join(task.Media.Maker, task.Media.Title)
+	err = download(task)
+	if err != nil {
+		log.Println("download error", task.Task.Url, err)
+		return
+	}
+	mover.Move(task.Media, task.Dir)
+	task.Task.UpdateStatus(Stats.Complete)
 }
 
 func Run() {

@@ -10,23 +10,33 @@ import (
 	"github.com/rekey/go-club/common"
 )
 
-func parseMadouM3U8Url(u string) string {
+func parseMadouThumb(s string) string {
+	re := regexp.MustCompile(`pic:\s*'([^']+)'`)
+	matches := re.FindStringSubmatch(s)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	return ""
+}
+
+func parseMadouM3U8AndThumb(u string) (string, string) {
 	if u == "" {
-		return ""
+		return "", ""
 	}
 	res, err := common.HttpGet(u, common.GetUrlRefer(u))
 	if err != nil {
 		log.Println(err)
-		return ""
+		return "", ""
 	}
 	defer res.Body.Close()
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Println(err)
-		return ""
+		return "", ""
 	}
+	s := string(bodyBytes)
 	re := regexp.MustCompile(`var\s+(token|m3u8)\s*=\s*['"]([^'"]+)['"]`)
-	matches := re.FindAllStringSubmatch(string(bodyBytes), -1)
+	matches := re.FindAllStringSubmatch(s, -1)
 	result := make(map[string]string)
 	for _, match := range matches {
 		result[match[1]] = match[2]
@@ -34,7 +44,7 @@ func parseMadouM3U8Url(u string) string {
 	token := result["token"]
 	m3u8 := result["m3u8"]
 	m3u8UrlOrigin := "https://dash.madou.club" + m3u8 + "?token=" + token
-	return m3u8UrlOrigin
+	return m3u8UrlOrigin, parseMadouThumb(s)
 }
 
 func parseMadou(u string) *Media {
@@ -64,6 +74,8 @@ func parseMadou(u string) *Media {
 		media.Title = strings.Replace(media.Title, media.Maker, "", 1)
 	}
 	media.Title = strings.Replace(media.Title, " ", "-", 10)
-	media.M3u8Url = parseMadouM3U8Url(media.M3u8Url)
+	m3u8Url, thumb := parseMadouM3U8AndThumb(media.M3u8Url)
+	media.M3u8Url = m3u8Url
+	media.Thumb = thumb
 	return &media
 }
