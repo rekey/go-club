@@ -26,7 +26,8 @@ func Move(media *parser.Media, dir string) error {
 		tmpFile := filepath.Join(tmpDir, file.Name())
 		resultFile := filepath.Join(resultDir, file.Name())
 		log.Println("move", tmpFile, "to", resultFile)
-		os.Rename(tmpFile, resultFile)
+		e := MoveFile(tmpFile, resultFile)
+		log.Println("rename error check", e)
 	}
 	posterFile := "poster" + path.Ext(media.Thumb)
 	posterPath := filepath.Join(resultDir, posterFile)
